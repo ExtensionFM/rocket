@@ -4,13 +4,13 @@ Rocket
 
 Rocket is a library for quickly implementing a client-side API. 
 
-Rocket is licensed under the `Link Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
+Rocket is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
 
 
 Features
 ========
 
-It uses an interface description language, specified by API implementors,
+Rocket uses an interface description language, specified by API implementors,
 to generate Python code that implements each API call. 
 
 Rocket is designed to help programmers focus on the details of an API
@@ -44,7 +44,7 @@ Install It
 
     python ./setup.py install
 
-pip support on the way
+pip / easy_install support on the way
 
 
 Author
