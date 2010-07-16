@@ -16,3 +16,4 @@ Or http://undefined.org/python/#simplejson
 __all__ = [ 'rocket' ]
 
 from rocket import Rocket, json, generate_proxies
+from rocket import RocketError, RocketAPIError
