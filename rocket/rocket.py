@@ -30,10 +30,14 @@ DEFAULT_REQUEST_METHOD = 'GET'
 
 ### Would like a hand making this appengine safe
 try:
-    from simplejson import dumps as json_encode
-    from simplejson import loads as json_decode
+    from json import dumps as json_encode
+    from json import loads as json_decode
 except ImportError:
-    quit('Rocket requires simplejson')
+    try:
+        from simplejson import dumps as json_encode
+        from simplejson import loads as json_decode
+    except ImportError:
+        quit('Rocket requires json support')
 
 
 # create json object for referencing complex structures in function_list
