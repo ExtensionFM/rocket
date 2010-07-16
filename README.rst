@@ -22,13 +22,13 @@ your API implementation will look close to this.
 
 ::
 
-FUNCTIONS = {
-    'email': {
-        'post': [
-            ('email', str, []),
-            ('vars', rocket.json, ['optional']),
-        ],
-    }
+    FUNCTIONS = {
+        'email': {
+            'post': [
+                ('email', str, []),
+                ('vars', rocket.json, ['optional']),
+            ],
+        }
 
 That's all the code required. Sometimes there are slight differences in
 how an API works, such as how a reques is signed. There are two functions
