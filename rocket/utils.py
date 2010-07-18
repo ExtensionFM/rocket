@@ -65,3 +65,29 @@ def sign_sorted_values(args, api_secret_key, hash_alg=md5):
 
 
 
+########################################
+# File handling functions ##############
+########################################
+
+def encode_multipart_formdata(self, fields, files):
+    """Encodes a multipart/form-data message to upload an image."""
+    boundary = '-------tHISiStheMulTIFoRMbOUNDaRY'
+    crlf = '\r\n'
+    l = []
+
+    for (key, value) in fields:
+        l.append('--' + boundary)
+        l.append('Content-Disposition: form-data; name="%s"' % str(key))
+        l.append('')
+        l.append(str(value))
+    for (filename, value) in files:
+        l.append('--' + boundary)
+        l.append('Content-Disposition: form-data; filename="%s"' % (str(filename), ))
+        l.append('Content-Type: %s' % self.__get_content_type(filename))
+        l.append('')
+        l.append(value.getvalue())
+    l.append('--' + boundary + '--')
+    l.append('')
+    body = crlf.join(l)
+    content_type = 'multipart/form-data; boundary=%s' % boundary
+    return content_type, body
