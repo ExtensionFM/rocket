@@ -111,7 +111,7 @@ class Proxy(object):
         return self._client('%s.%s' % (self._name, method), args)
 
 
-def generate_proxies(function_list, doc_fun):
+def generate_proxies(function_list, doc_fun, foreign_globals={}):
     """Helper function for compiling function_list into runnable code.
     Run immediately after definition.
     """
@@ -165,6 +165,7 @@ def generate_proxies(function_list, doc_fun):
 
         proxy = type('%sProxy' % namespace.title(), (Proxy, ), methods)
         globals()[proxy.__name__] = proxy
+        foreign_globals[proxy.__name__] = proxy
 
 
 class RocketError(Exception):
