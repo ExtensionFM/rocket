@@ -18,6 +18,8 @@ import binascii
 import urlparse
 import mimetypes
 
+from utils import sign_args
+
 try:
     from hashlib import md5
 except ImportError:
@@ -226,46 +228,6 @@ class Rocket(object):
         return args
 
 
-    def _hash_args(self, args, hash_alg=md5):
-        """Hashes arguments by joining key=value pairs, appending a
-        secret, and then taking the MD5 hex digest.
-        """
-        s = ''.join(['%s=%s' % (isinstance(x, unicode)
-                                and x.encode("utf-8")
-                                or x,
-                                isinstance(args[x], unicode)
-                                and args[x].encode("utf-8")
-                                or args[x])
-                     for x in sorted(args.keys())])
-        return hash_alg(s).hexdigest()
-    
-
-    def _get_sorted_value_hash(self, args, hash_alg=md5):
-        """Generates an API signature hash by flattening the arguments
-        into a sorted list of values. It then creates the hash by
-        entering self.api_secret_key + sorted values into hash_algorithm.
-
-        The default hash algorithm is md5 (which defaults to hashlib.md5).
-
-        Any algorithm may be used as long as it implements hexdigest()
-        """
-        arranged_args = sorted(self._extract_param_values(args))
-        s = self.api_secret_key + ''.join(arranged_args)
-        return hash_alg(s).hexdigest()
-    
-
-    def _extract_param_values(self, params):
-        """Creates a flattened list of values from params dict"""
-        values = []
-        def inspect(i):
-            if type(i) == dict:
-                map(inspect, i.values())
-            else:
-                return values.append(i)
-        map(inspect, params.values())
-        return values
-    
-
     def _parse_response(self, response, method, format=DEFAULT_RESPONSE_FORMAT):
         """Parses the response according to the given (optional) format,
         which should be 'json'.
@@ -350,13 +312,13 @@ class Rocket(object):
                                'build_query_args')
 
         if signing_alg == None:
-            signing_alg = self._hash_args
+            signing_alg = sign_args
 
         args = self._expand_arguments(args)
         
         args['api_key'] = self.api_key
         args['format'] = format
-        args['sig'] = signing_alg(args)
+        args['sig'] = signing_alg(args, self.api_secret_key)
 
         return args
 

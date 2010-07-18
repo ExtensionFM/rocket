@@ -13,7 +13,10 @@ To install simplejson:
 Or http://undefined.org/python/#simplejson
 """
 
-__all__ = [ 'rocket' ]
+__all__ = [ 'rocket', 'utils' ]
 
 from rocket import Rocket, json, generate_proxies
 from rocket import RocketError, RocketAPIError
+
+import utils
+
