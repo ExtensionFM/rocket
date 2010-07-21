@@ -70,7 +70,8 @@ def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD):
     url_path = parsed_url.path
     
     if method == 'GET':
-        url_path = '%s?%s' % (url_path, data)
+        if data is not None:
+            url_path = '%s?%s' % (url_path, data)
         data = None
     if method == 'POST':
         headers["Content-type"] = "application/x-www-form-urlencoded"
