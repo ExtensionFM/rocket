@@ -50,7 +50,19 @@ class json(object): pass
 # URL handling #########################
 ########################################
 
-def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD):
+def encode_auth_pair(basic_auth_pair):
+    """Base64 encodes a username and password delimited by ':'.
+    It then returns 'Basic EnCoDedStriNG.
+    """
+    if basic_auth_pair:
+        import base64
+        unencoded = '%s:%s' % basic_auth_pair
+        ba_str = base64.encodestring(unencoded)[:-1]
+        return 'Basic %s ' % ba_str
+
+
+def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
+            basic_auth_pair=None, basic_auth_realm=None):
     """Takes a url[, data, headers, request method].
 
     It establishes an httplib.HTTPConnection and allows
@@ -62,26 +74,35 @@ def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD):
 
     Returns a tuple of (status code, reason, any data read)
     """
-    data = urllib.urlencode(data) 
+    if data is not None:
+        data = urllib.urlencode(data)
 
     # encoded_args = unicode_urlencode(encoded_args)
 
-    parsed_url = urlparse.urlparse(url)
-    url_path = parsed_url.path
-    
     if method == 'GET':
         if data is not None:
-            url_path = '%s?%s' % (url_path, data)
+            url = '%s?%s' % (url, data)
         data = None
-    if method == 'POST':
-        headers["Content-type"] = "application/x-www-form-urlencoded"
-        headers["Accept"] = "text/plain"
-        
-    c = httplib.HTTPConnection(parsed_url.hostname)
-    c.request(method, url_path, body=data, headers=headers)
-    r = c.getresponse()
 
-    return (r.status, r.reason, r.read())
+    if basic_auth_pair:
+        auth_handler = urllib2.HTTPBasicAuthHandler()
+        auth_handler.add_password(realm=basic_auth_realm,
+                                  uri=url,
+                                  user=basic_auth_pair[0],
+                                  passwd=basic_auth_pair[1])
+        opener = urllib2.build_opener(auth_handler)
+        # ...and install it globally so it can be used with urlopen.
+        urllib2.install_opener(opener)
+
+    request = urllib2.Request(url, data)
+    open_req = urllib2.urlopen(request)
+    #if method == 'POST':
+    #    req.add_header('Content-type', "application/x-www-form-urlencoded")
+    #    req.add_header('Accept', "text/plain")
+    open_req.http_method = method
+
+    #return (r.status, r.reason, r.read())
+    return (open_req.code, open_req.msg, open_req.read())
 
 
 def unicode_urlencode(self, params):
@@ -98,12 +119,23 @@ def unicode_urlencode(self, params):
 # Proxy functions ######################
 ########################################
 
+def gen_namespace_pair(ns):
+    """A namespace pair represents the name of the object a programmer
+    interacts with (first part) and a titled version of that name for
+    use with object creation.
+
+        rocket.(first part).function()
+    """
+    return (ns.lower(), ns.title())
+
+
 class Proxy(object):
     """Represents a namespace of API calls."""
 
-    def __init__(self, client, name):
+    def __init__(self, client, name, gen_namespace_pair=gen_namespace_pair):
         self._client = client
         self._name = name
+        self.gen_namespace_pair = gen_namespace_pair
 
     def __call__(self, method=None, args=None, add_session_args=True):
         # for Django templates, if this object is called without any arguments
@@ -113,8 +145,9 @@ class Proxy(object):
 
         return self._client('%s.%s' % (self._name, method), args)
 
-
-def generate_proxies(function_list, doc_fun, foreign_globals={}):
+    
+def generate_proxies(function_list, doc_fun, foreign_globals={},
+                     gen_namespace_pair=gen_namespace_pair):
     """Helper function for compiling function_list into runnable code.
     Run immediately after definition.
     """
@@ -166,7 +199,10 @@ def generate_proxies(function_list, doc_fun, foreign_globals={}):
             exec('\n    '.join(body))
             methods[method] = eval(method)
 
-        proxy = type('%sProxy' % namespace.title(), (Proxy, ), methods)
+        # Sometimes namespaces need calm down a little bit
+        (ns_name, ns_title) = gen_namespace_pair(namespace)
+
+        proxy = type('%sProxy' % ns_title, (Proxy, ), methods)
         globals()[proxy.__name__] = proxy
         foreign_globals[proxy.__name__] = proxy
 
@@ -201,7 +237,9 @@ class Rocket(object):
     """
 
     def __init__(self, api_key, api_secret_key, client='rocket',
-                 proxy=None, api_url=None, api_url_secure=None):
+                 proxy=None, api_url=None, api_url_secure=None,
+                 basic_auth_pair=None, basic_auth_realm=None,
+                 gen_namespace_pair=gen_namespace_pair):
         """Initializes a new Rocket which provides wrappers for the
         API implementation.
         """
@@ -210,11 +248,16 @@ class Rocket(object):
         self.proxy = proxy
         self.api_url = api_url
         self.api_url_secure = api_url_secure
+        self.basic_auth_pair = basic_auth_pair
+        self.basic_auth_realm = basic_auth_realm
+        self.gen_namespace_pair = gen_namespace_pair
 
         for namespace in self.function_list:
-            self.__dict__[namespace] = eval('%sProxy(self, \'%s\')'
-                                            % (namespace.title(),
-                                               '%s.%s' % (client, namespace)))
+            (ns_name, ns_title) = self.gen_namespace_pair(namespace)
+
+            self.__dict__[ns_name] = eval('%sProxy(self, \'%s\')'
+                                          % (ns_title,
+                                             '%s.%s' % (client, ns_name)))
 
             
     def _expand_arguments(self, args):
@@ -238,6 +281,7 @@ class Rocket(object):
             result = json_decode(json)
             self.check_error(result)
         else:
+            print response
             raise RuntimeError('Invalid format specified.')
         return result
 
@@ -248,7 +292,7 @@ class Rocket(object):
         based on arguments and calls appropriate Proxy object for
         function behavior.
         """
-        
+
         # for Django templates, if this object is called without any arguments
         # return the object itself
         if function is None:
@@ -261,16 +305,17 @@ class Rocket(object):
             raise rocket.RocketError('Incorrect function_list definition')
 
         obj_name = fun_parts[0]
-        # function is everything between 
-        function = '.'.join(fun_parts[1:(num_parts-1)])
         method = fun_parts[-1]
+        # function is everything between
+        function = '.'.join(fun_parts[1:(num_parts-1)])
+        (ns_fun, ns_title) = self.gen_namespace_pair(function)
 
         args = self.build_query_args(method, args=args, format=format)
 
         api_url = self.api_url
         if secure:
             api_url = self.api_url_secure
-        query_url = self.gen_query_url(api_url, function, format=format,
+        query_url = self.gen_query_url(api_url, ns_fun, format=format,
                                        get_args=args)
 
         if self.proxy:
@@ -278,7 +323,9 @@ class Rocket(object):
             opener = urllib2.build_opener(proxy_handler)
             response = opener.open(query_url).read()
         else:
-            response = urlread(query_url, data=args, method=method.upper())
+            response = urlread(query_url, data=args, method=method.upper(),
+                               basic_auth_pair=self.basic_auth_pair,
+                               basic_auth_realm=self.basic_auth_realm)
 
         return self._parse_response(response, method)
 
