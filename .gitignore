@@ -1,5 +1,6 @@
 .DS_Store
 *.pyc
+*.bak
 *.*~
 MANIFEST
 build
