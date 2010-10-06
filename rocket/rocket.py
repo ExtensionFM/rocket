@@ -19,6 +19,7 @@ import urlparse
 import mimetypes
 
 from utils import sign_args
+from utils import gen_ns_pair_default
 
 try:
     from hashlib import md5
@@ -119,20 +120,10 @@ def unicode_urlencode(self, params):
 # Proxy functions ######################
 ########################################
 
-def gen_namespace_pair(ns):
-    """A namespace pair represents the name of the object a programmer
-    interacts with (first part) and a titled version of that name for
-    use with object creation.
-
-        rocket.(first part).function()
-    """
-    return (ns.lower(), ns.title())
-
-
 class Proxy(object):
     """Represents a namespace of API calls."""
 
-    def __init__(self, client, name, gen_namespace_pair=gen_namespace_pair):
+    def __init__(self, client, name, gen_namespace_pair=gen_ns_pair_default):
         self._client = client
         self._name = name
         self.gen_namespace_pair = gen_namespace_pair
@@ -147,7 +138,7 @@ class Proxy(object):
 
     
 def generate_proxies(function_list, doc_fun, foreign_globals={},
-                     gen_namespace_pair=gen_namespace_pair):
+                     gen_namespace_pair=gen_ns_pair_default):
     """Helper function for compiling function_list into runnable code.
     Run immediately after definition.
     """
@@ -229,7 +220,7 @@ class RocketAPIError(RocketError):
 
 
 class Rocket(object):
-    """Provides access to the most features necessary for an API
+    """Provides access to most features necessary for an API
     implementation. 
 
     Initialize with api_key and api_secret_key, both available from
@@ -239,26 +230,29 @@ class Rocket(object):
     def __init__(self, api_key, api_secret_key, client='rocket',
                  proxy=None, api_url=None, api_url_secure=None,
                  basic_auth_pair=None, basic_auth_realm=None,
-                 gen_namespace_pair=gen_namespace_pair):
+                 gen_namespace_pair=gen_ns_pair_default):
         """Initializes a new Rocket which provides wrappers for the
         API implementation.
+
+        The namespace map saves a namespace as it originally appeared in FUNCTIONS
         """
         self.api_key = api_key
         self.api_secret_key = api_secret_key
         self.proxy = proxy
-        self.api_url = api_url
+        self.api_url = api_url;
         self.api_url_secure = api_url_secure
         self.basic_auth_pair = basic_auth_pair
         self.basic_auth_realm = basic_auth_realm
         self.gen_namespace_pair = gen_namespace_pair
+        self.namespace_map = {}
 
         for namespace in self.function_list:
             (ns_name, ns_title) = self.gen_namespace_pair(namespace)
-
             self.__dict__[ns_name] = eval('%sProxy(self, \'%s\')'
                                           % (ns_title,
                                              '%s.%s' % (client, ns_name)))
-
+            self.namespace_map[ns_name] = namespace
+            
             
     def _expand_arguments(self, args):
         """Expands arguments from native type to web friendly type"""
@@ -292,23 +286,21 @@ class Rocket(object):
         based on arguments and calls appropriate Proxy object for
         function behavior.
         """
-
         # for Django templates, if this object is called without any arguments
         # return the object itself
         if function is None:
             return self
 
-        # Entries in function_list are app_name.[namespace.]function.method
+        # Entries in function_list are app_name.[namespace]function.method
         fun_parts = function.split('.')
         num_parts = len(fun_parts)
         if num_parts < 3:
             raise rocket.RocketError('Incorrect function_list definition')
 
         obj_name = fun_parts[0]
-        method = fun_parts[-1]
-        # function is everything between
-        function = '.'.join(fun_parts[1:(num_parts-1)])
-        (ns_fun, ns_title) = self.gen_namespace_pair(function)
+        namespace = fun_parts[1]
+        method = fun_parts[2]
+        (ns_fun, ns_title) = self.gen_namespace_pair(namespace)
 
         args = self.build_query_args(method, args=args, format=format)
 
@@ -316,7 +308,7 @@ class Rocket(object):
         if secure:
             api_url = self.api_url_secure
         query_url = self.gen_query_url(api_url, ns_fun, format=format,
-                                       get_args=args)
+                                       method=method, get_args=args)
 
         if self.proxy:
             proxy_handler = urllib2.ProxyHandler(self.proxy)
@@ -339,7 +331,7 @@ class Rocket(object):
 
     
     def gen_query_url(self, url, function, format=DEFAULT_RESPONSE_FORMAT,
-                      get_args=None):
+                      method=None, get_args=None):
         """Generates URL for request according to structure of IDL.
 
         Implementation formats worth considering:

@@ -91,3 +91,40 @@ def encode_multipart_formdata(self, fields, files):
     body = crlf.join(l)
     content_type = 'multipart/form-data; boundary=%s' % boundary
     return content_type, body
+
+#######################################################
+# Namespace generation functions.                     #
+#######################################################
+
+def gen_ns_pair_default(ns):
+    """A namespace pair represents the name of the object a programmer
+    interacts with (first part) and a titled version of that name for
+    use with object creation.
+
+        rocket.(first part).function()
+    """
+    return (ns.lower(), ns.title())
+
+
+def gen_ns_pair_slash_delim(ns):
+    """Similar to gen_ns_pair_default but allows a '/' in the namespace
+    field. If any of the split segments consist entirely of upper case
+    letters, they stay upper case. They are title()'d otherwise to
+    create a usual looking object name.
+
+    SMS/Messages => ('SMSMessages', 'SMSMessages')
+      or
+    user/noted   => ('usernoted', 'UserNoted')
+
+    returns ('dynamic function name', 'dynamic class name')
+    """
+    def title_if_lower(nnss):
+        if not nnss.isupper():
+            return nnss.title()
+        return nnss
+    
+    n_parts = ns.split('/')
+    ns_fun = ''.join(n_parts)
+    ns_title = ''.join([title_if_lower(n) for n in n_parts])
+    return (ns_fun, ns_title)
+
