@@ -17,6 +17,7 @@ import httplib
 import binascii
 import urlparse
 import mimetypes
+import logging
 
 from utils import sign_args
 from utils import gen_ns_pair_default
@@ -83,6 +84,7 @@ def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
     if method == 'GET':
         if data is not None:
             url = '%s?%s' % (url, data)
+            logging.debug("Make %s connection to %s" % ( method, data ) )
         data = None
 
     if basic_auth_pair:
@@ -137,7 +139,7 @@ class Proxy(object):
         return self._client('%s.%s' % (self._name, method), args)
 
     
-def generate_proxies(function_list, doc_fun, foreign_globals={},
+def generate_proxies(function_list, doc_fun=None, foreign_globals={},
                      gen_namespace_pair=gen_ns_pair_default):
     """Helper function for compiling function_list into runnable code.
     Run immediately after definition.
@@ -184,7 +186,8 @@ def generate_proxies(function_list, doc_fun, foreign_globals={},
                 params.append(param)
 
             # simple docstring to refer them to web docs for their API
-            body.insert(0, doc_fun(namespace, method))
+            if doc_fun:
+                body.insert(0, doc_fun(namespace, method))
             body.insert(0, 'def %s(%s):' % (method, ', '.join(params)))
             body.append('return self(\'%s\', args)' % method)
             exec('\n    '.join(body))
@@ -227,10 +230,12 @@ class Rocket(object):
     sailthru
     """
 
-    def __init__(self, api_key, api_secret_key, client='rocket',
+    def __init__(self, api_key=None, api_secret_key=None, client='rocket',
                  proxy=None, api_url=None, api_url_secure=None,
                  basic_auth_pair=None, basic_auth_realm=None,
-                 gen_namespace_pair=gen_ns_pair_default):
+                 gen_namespace_pair=gen_ns_pair_default, 
+                 log_level=logging.INFO, 
+                 log_stream=sys.stdout ):
         """Initializes a new Rocket which provides wrappers for the
         API implementation.
 
@@ -245,6 +250,10 @@ class Rocket(object):
         self.basic_auth_realm = basic_auth_realm
         self.gen_namespace_pair = gen_namespace_pair
         self.namespace_map = {}
+        
+        ## setup basic logging
+        # logging.basicConfig(stream=log_stream, level=log_level, 
+        #     format='%(asctime)s %(process)d %(filename)s %(lineno)d %(levelname)s #| %(message)s', datefmt='%Y/%m/%d %H:%M:%S')        
 
         for namespace in self.function_list:
             (ns_name, ns_title) = self.gen_namespace_pair(namespace)
@@ -256,6 +265,7 @@ class Rocket(object):
             
     def _expand_arguments(self, args):
         """Expands arguments from native type to web friendly type"""
+        logging.debug("rocket _expand_arguments %s" % args )
         for arg in args.items():
             if type(arg[1]) == list:
                 args[arg[0]] = ','.join(str(a) for a in arg[1])
@@ -270,6 +280,7 @@ class Rocket(object):
         """Parses the response according to the given (optional) format,
         which should be 'json'.
         """
+        logging.debug("rocket _parse_response, response=%s and method=%s" % (response, method) )
         if format == RESPONSE_JSON:
             json = response[2]
             result = json_decode(json)
@@ -331,7 +342,7 @@ class Rocket(object):
 
     
     def gen_query_url(self, url, function, format=DEFAULT_RESPONSE_FORMAT,
-                      method=None, get_args=None):
+                      method="get", get_args=None):
         """Generates URL for request according to structure of IDL.
 
         Implementation formats worth considering:
@@ -351,14 +362,20 @@ class Rocket(object):
             raise RuntimeError('Arguments required for call to '
                                'build_query_args')
 
-        if signing_alg == None:
-            signing_alg = sign_args
+
 
         args = self._expand_arguments(args)
         
-        args['api_key'] = self.api_key
+        if self.api_key:
+            args['api_key'] = self.api_key
         args['format'] = format
-        args['sig'] = signing_alg(args, self.api_secret_key)
+        
+        if self.api_key and self.api_secret_key:
+            
+            if signing_alg == None:
+                signing_alg = sign_args            
+            
+            args['sig'] = signing_alg(args, self.api_secret_key)
 
         return args
 
