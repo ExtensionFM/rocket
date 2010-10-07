@@ -273,7 +273,7 @@ class Rocket(object):
         self._log_stream=log_stream
         
         
-        logger = r_log()
+        logger = r_log( log_stream=log_stream, log_level=log_level )
         logger.debug("Create rocket: url: %s client %s" % (api_url,client) )
 
 
@@ -289,7 +289,7 @@ class Rocket(object):
     def _expand_arguments(self, args):
         """Expands arguments from native type to web friendly type"""
 
-        logger = r_log()
+        logger = r_log( log_stream=self._log_stream, log_level=self._log_level )
         logger.debug("rocket _expand_arguments %s" % args )
         for arg in args.items():
             if type(arg[1]) == list:
@@ -305,7 +305,7 @@ class Rocket(object):
         """Parses the response according to the given (optional) format,
         which should be 'json'.
         """
-        logger = r_log()
+        logger = r_log( log_stream=self._log_stream, log_level=self._log_level )
         logger.debug("rocket _parse_response, response=%s and method=%s" % (response, method) )
         if format == RESPONSE_JSON:
             json = response[2]
