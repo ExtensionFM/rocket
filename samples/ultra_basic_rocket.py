@@ -1,21 +1,13 @@
+#!/usr/bin/env python
 
-
-
-##
-# rocket not intalled, adjust path (remove when rocket is recompiled) 10/6/2010
-##
-import sys
-import os
-library_files = os.path.abspath(os.path.join( os.path.dirname(__file__), "../"))
-sys.path.append(library_files)
-# end not installed path adjust
-
-
-
-import rocket
-
-#http://viewtext.org/api/text
-
+try:
+    import rocket
+except:
+    print "fail over to the rocket in the repos struct"
+    import sys
+    import os
+    sys.path.append( os.path.abspath(os.path.join( os.path.dirname(__file__), "../"))  )
+    import rocket
 
 FUNCTIONS = {
     'text' : {
@@ -33,8 +25,11 @@ rocket.generate_proxies(FUNCTIONS, foreign_globals=globals() )
 class ViewTest( rocket.Rocket ):
     
     def __init__(self, *args, **kwargs):
+        # give rocket some api 'functions' 
+        # this is formatted in the gen_query_url
         self.function_list = FUNCTIONS
         # the name of your class, in this case: ViewTest
+        # you can configure a lot more, see pysailthru for more usage
         super(ViewTest, self).__init__( api_url=API_BASE_URL, *args, **kwargs )
         
     
@@ -52,17 +47,15 @@ class ViewTest( rocket.Rocket ):
         ## for this example
         ## url = http://viewtext.org/api
         ## function = text
-        ## rocket will auto append format=json, (we just say     **kwargs to let rocket handle othe keywords) 
+        ## rocket will auto append format=json, (we just say **kwargs to let rocket handle other keywords) 
         ## you can override this, see pysailthru example for deeper usage
         return "%s/%s" % ( url, function )
     
 
-        
-        
-        
-#
 if __name__ == "__main__":
+    # simple test, scape the test of the extension.fm site, returns json, print to screen
     simple_rocket = ViewTest()
+    # actually call the api now
     rocket_response = simple_rocket.text.get("extension.fm")
     print rocket_response
         

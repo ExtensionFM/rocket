@@ -37,6 +37,14 @@ documentation to determine which one to use, if you need one, or please
 write your own and send me a copy for inclusion.
 
 
+Samples
+==========
+
+See an ultra bare-bones, quick start of rocket in samples/ultra_basic_rocket.py
+
+More in-depth samples can be found in the pysailthru library <http://github.com/ExtensionFM/pysailthru>
+
+
 Install It
 ==========
 
