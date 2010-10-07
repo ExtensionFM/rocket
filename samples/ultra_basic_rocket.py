@@ -52,7 +52,7 @@ class ViewTest( rocket.Rocket ):
         ## for this example
         ## url = http://viewtext.org/api
         ## function = text
-        ## rocket will auto append format=json, (we just say **kwargs to let rocket handle othe keywords) 
+        ## rocket will auto append format=json, (we just say     **kwargs to let rocket handle othe keywords) 
         ## you can override this, see pysailthru example for deeper usage
         return "%s/%s" % ( url, function )
     
