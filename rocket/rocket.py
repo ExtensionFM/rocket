@@ -19,8 +19,10 @@ import urlparse
 import mimetypes
 import logging
 
+
 from utils import sign_args
 from utils import gen_ns_pair_default
+from utils import r_log
 
 try:
     from hashlib import md5
@@ -64,7 +66,7 @@ def encode_auth_pair(basic_auth_pair):
 
 
 def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
-            basic_auth_pair=None, basic_auth_realm=None):
+            basic_auth_pair=None, basic_auth_realm=None, log_stream=sys.stderr, log_level=logging.DEBUG):
     """Takes a url[, data, headers, request method].
 
     It establishes an httplib.HTTPConnection and allows
@@ -76,15 +78,16 @@ def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
 
     Returns a tuple of (status code, reason, any data read)
     """
+    logger = r_log( log_stream=log_stream, log_level=log_level )
     if data is not None:
         data = urllib.urlencode(data)
 
     # encoded_args = unicode_urlencode(encoded_args)
-
+    
     if method == 'GET':
         if data is not None:
             url = '%s?%s' % (url, data)
-            logging.debug("Make %s connection to %s" % ( method, data ) )
+            logger.debug("Make %s connection to %s" % ( method, data ) )
         data = None
 
     if basic_auth_pair:
@@ -98,14 +101,24 @@ def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
         urllib2.install_opener(opener)
 
     request = urllib2.Request(url, data)
-    open_req = urllib2.urlopen(request)
-    #if method == 'POST':
-    #    req.add_header('Content-type', "application/x-www-form-urlencoded")
-    #    req.add_header('Accept', "text/plain")
-    open_req.http_method = method
-
+    try:
+        open_req = urllib2.urlopen(request)
+        #if method == 'POST':
+        #    req.add_header('Content-type', "application/x-www-form-urlencoded")
+        #    req.add_header('Accept', "text/plain")
+        open_req.http_method = method
+    except urllib2.HTTPError, http_e:
+        raise RocketAPIError( http_e.code,  http_e )
+    except urllib2.URLError,e:
+        logger.warn("Connection error %s" % e)
+        raise RocketError( e )
+    except Exception,e:
+        logger.critical("uknown error %s" % e )
+        raise RocketError( e )        
+        
+    return (open_req.code, open_req.msg, open_req.read())  
     #return (r.status, r.reason, r.read())
-    return (open_req.code, open_req.msg, open_req.read())
+
 
 
 def unicode_urlencode(self, params):
@@ -140,10 +153,12 @@ class Proxy(object):
 
     
 def generate_proxies(function_list, doc_fun=None, foreign_globals={},
-                     gen_namespace_pair=gen_ns_pair_default):
+                     gen_namespace_pair=gen_ns_pair_default, log_stream=sys.stdout, log_level=logging.INFO):
     """Helper function for compiling function_list into runnable code.
     Run immediately after definition.
     """
+    logger = r_log( log_stream=log_stream, log_level=log_level )
+    logger.debug("Creating rockets %s \n" % function_list )
     for namespace in function_list:
         methods = {}
 
@@ -222,6 +237,9 @@ class RocketAPIError(RocketError):
         return '%s - (code: %s)' % (self.msg, self.code)
 
 
+
+
+
 class Rocket(object):
     """Provides access to most features necessary for an API
     implementation. 
@@ -234,8 +252,9 @@ class Rocket(object):
                  proxy=None, api_url=None, api_url_secure=None,
                  basic_auth_pair=None, basic_auth_realm=None,
                  gen_namespace_pair=gen_ns_pair_default, 
-                 log_level=logging.INFO, 
-                 log_stream=sys.stdout ):
+                 log_stream=sys.stdout, 
+                 log_level=logging.INFO
+                 ):
         """Initializes a new Rocket which provides wrappers for the
         API implementation.
 
@@ -250,10 +269,14 @@ class Rocket(object):
         self.basic_auth_realm = basic_auth_realm
         self.gen_namespace_pair = gen_namespace_pair
         self.namespace_map = {}
+        self._log_level=log_level
+        self._log_stream=log_stream
         
-        ## setup basic logging
-        # logging.basicConfig(stream=log_stream, level=log_level, 
-        #     format='%(asctime)s %(process)d %(filename)s %(lineno)d %(levelname)s #| %(message)s', datefmt='%Y/%m/%d %H:%M:%S')        
+        
+        logger = r_log()
+        logger.debug("Create rocket: url: %s client %s" % (api_url,client) )
+
+
 
         for namespace in self.function_list:
             (ns_name, ns_title) = self.gen_namespace_pair(namespace)
@@ -265,7 +288,9 @@ class Rocket(object):
             
     def _expand_arguments(self, args):
         """Expands arguments from native type to web friendly type"""
-        logging.debug("rocket _expand_arguments %s" % args )
+
+        logger = r_log()
+        logger.debug("rocket _expand_arguments %s" % args )
         for arg in args.items():
             if type(arg[1]) == list:
                 args[arg[0]] = ','.join(str(a) for a in arg[1])
@@ -280,13 +305,14 @@ class Rocket(object):
         """Parses the response according to the given (optional) format,
         which should be 'json'.
         """
-        logging.debug("rocket _parse_response, response=%s and method=%s" % (response, method) )
+        logger = r_log()
+        logger.debug("rocket _parse_response, response=%s and method=%s" % (response, method) )
         if format == RESPONSE_JSON:
             json = response[2]
             result = json_decode(json)
             self.check_error(result)
         else:
-            print response
+            logger.critical( response )
             raise RuntimeError('Invalid format specified.')
         return result
 
@@ -326,11 +352,19 @@ class Rocket(object):
             opener = urllib2.build_opener(proxy_handler)
             response = opener.open(query_url).read()
         else:
-            response = urlread(query_url, data=args, method=method.upper(),
-                               basic_auth_pair=self.basic_auth_pair,
-                               basic_auth_realm=self.basic_auth_realm)
 
-        return self._parse_response(response, method)
+            response = urlread(query_url, data=args, method=method.upper(),
+                           basic_auth_pair=self.basic_auth_pair,
+                           basic_auth_realm=self.basic_auth_realm,
+                           log_level=self._log_level,
+                           log_stream=self._log_stream)
+        
+            if response:
+                return self._parse_response(response, method)
+            else:
+                return None
+        
+        return response
 
 
     def check_error(self, response):

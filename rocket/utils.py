@@ -5,6 +5,9 @@ try:
 except ImportError:
     from md5 import md5
     
+import logging
+import sys
+    
 
 ########################################
 # Key signing functions ################
@@ -127,4 +130,26 @@ def gen_ns_pair_slash_delim(ns):
     ns_fun = ''.join(n_parts)
     ns_title = ''.join([title_if_lower(n) for n in n_parts])
     return (ns_fun, ns_title)
+
+
+
+##
+
+def r_log(log_stream=sys.stdout,log_level=logging.INFO):
+
+    logger = logging.getLogger("logger_rocket")
+    #lowest lever the logger can tolerate, set to debug
+    logger.setLevel(logging.DEBUG)
+    
+    # set stream from user, user sys.stdout as rocket default
+    ch = logging.StreamHandler( log_stream )
+    # set the log level requested by user, default is logging.info
+    ch.setLevel( log_level )
+    formatter = logging.Formatter("%(asctime)s %(process)d %(filename)s %(lineno)d %(levelname)s #rocket| %(message)s") 
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)        
+    
+    return logger
+
+
 
