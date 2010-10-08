@@ -66,15 +66,17 @@ def encode_auth_pair(basic_auth_pair):
 
 
 def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
-            basic_auth_pair=None, basic_auth_realm=None, log_stream=sys.stderr, log_level=logging.DEBUG):
+            basic_auth_pair=None, basic_auth_realm=None, log_stream=sys.stderr,
+            log_level=logging.DEBUG):
     """Takes a url[, data, headers, request method].
 
     It establishes an httplib.HTTPConnection and allows
     specific HTTP connection types, like POST, PUT, DELETE
     for API interaction.
 
-    POST sends 'application/x-www-form-urlencoded' for it's
-    Content-type
+    # commenting out a comment (so meta)
+    # POST sends 'application/x-www-form-urlencoded' for it's
+    # Content-type
 
     Returns a tuple of (status code, reason, any data read)
     """
@@ -103,6 +105,7 @@ def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
     request = urllib2.Request(url, data)
     try:
         open_req = urllib2.urlopen(request)
+        # commenting out the code the commented comment comments on
         #if method == 'POST':
         #    req.add_header('Content-type', "application/x-www-form-urlencoded")
         #    req.add_header('Accept', "text/plain")
@@ -153,7 +156,8 @@ class Proxy(object):
 
     
 def generate_proxies(function_list, doc_fun=None, foreign_globals={},
-                     gen_namespace_pair=gen_ns_pair_default, log_stream=sys.stdout, log_level=logging.INFO):
+                     gen_namespace_pair=gen_ns_pair_default,
+                     log_stream=sys.stdout, log_level=logging.INFO):
     """Helper function for compiling function_list into runnable code.
     Run immediately after definition.
     """
@@ -237,31 +241,28 @@ class RocketAPIError(RocketError):
         return '%s - (code: %s)' % (self.msg, self.code)
 
 
-
-
-
 class Rocket(object):
     """Provides access to most features necessary for an API
     implementation. 
 
-    Initialize with api_key and api_secret_key, both available from
-    sailthru
+    All configuration options are keywords, since every API is different.
     """
 
     def __init__(self, api_key=None, api_secret_key=None, client='rocket',
                  proxy=None, api_url=None, api_url_secure=None,
                  basic_auth_pair=None, basic_auth_realm=None,
                  gen_namespace_pair=gen_ns_pair_default, 
-                 log_stream=sys.stdout, 
-                 log_level=logging.INFO
-                 ):
+                 log_stream=sys.stdout, log_level=logging.INFO,
+                 format=DEFAULT_RESPONSE_FORMAT):
         """Initializes a new Rocket which provides wrappers for the
         API implementation.
 
-        The namespace map saves a namespace as it originally appeared in FUNCTIONS
+        The namespace map saves a namespace as it originally appeared in
+        FUNCTIONS
         """
         self.api_key = api_key
         self.api_secret_key = api_secret_key
+        self.format = format
         self.proxy = proxy
         self.api_url = api_url;
         self.api_url_secure = api_url_secure
@@ -272,11 +273,8 @@ class Rocket(object):
         self._log_level=log_level
         self._log_stream=log_stream
         
-        
         logger = r_log( log_stream=log_stream, log_level=log_level )
         logger.debug("Create rocket: url: %s client %s" % (api_url,client) )
-
-
 
         for namespace in self.function_list:
             (ns_name, ns_title) = self.gen_namespace_pair(namespace)
@@ -301,13 +299,14 @@ class Rocket(object):
         return args
 
 
-    def _parse_response(self, response, method, format=DEFAULT_RESPONSE_FORMAT):
+    def _parse_response(self, response, method):
         """Parses the response according to the given (optional) format,
         which should be 'json'.
         """
         logger = r_log( log_stream=self._log_stream, log_level=self._log_level )
-        logger.debug("rocket _parse_response, response=%s and method=%s" % (response, method) )
-        if format == RESPONSE_JSON:
+        logger.debug("rocket _parse_response, response=%s and method=%s"
+                     % (response, method) )
+        if self.format == RESPONSE_JSON:
             json = response[2]
             result = json_decode(json)
             self.check_error(result)
@@ -317,8 +316,7 @@ class Rocket(object):
         return result
 
 
-    def __call__(self, function=None, args=None, secure=False,
-                 format=DEFAULT_RESPONSE_FORMAT):
+    def __call__(self, function=None, args=None, secure=False):
         """Mediator for calls to dynamic methods. Constructs environment
         based on arguments and calls appropriate Proxy object for
         function behavior.
@@ -339,13 +337,13 @@ class Rocket(object):
         method = fun_parts[2]
         (ns_fun, ns_title) = self.gen_namespace_pair(namespace)
 
-        args = self.build_query_args(method, args=args, format=format)
+        args = self.build_query_args(method, args=args)
 
         api_url = self.api_url
         if secure:
             api_url = self.api_url_secure
-        query_url = self.gen_query_url(api_url, ns_fun, format=format,
-                                       method=method, get_args=args)
+        query_url = self.gen_query_url(api_url, ns_fun, method=method,
+                                       get_args=args)
 
         if self.proxy:
             proxy_handler = urllib2.ProxyHandler(self.proxy)
@@ -375,19 +373,17 @@ class Rocket(object):
         raise RuntimeError(reason)
 
     
-    def gen_query_url(self, url, function, format=DEFAULT_RESPONSE_FORMAT,
-                      method="get", get_args=None):
+    def gen_query_url(self, url, function, method="get", get_args=None):
         """Generates URL for request according to structure of IDL.
 
         Implementation formats worth considering:
             url/function.format
             url/function
         """
-        return '%s/%s.%s' % (url, function, format)
+        return '%s/%s.%s' % (url, function, self.format)
 
     
     def build_query_args(self, method, args=None,
-                         format=DEFAULT_RESPONSE_FORMAT,
                          signing_alg=None):
         """Adds to args parameters that are necessary for every call to
         the API.
@@ -396,19 +392,17 @@ class Rocket(object):
             raise RuntimeError('Arguments required for call to '
                                'build_query_args')
 
-
-
         args = self._expand_arguments(args)
+        
+        if self.format:
+            args['format'] = self.format
         
         if self.api_key:
             args['api_key'] = self.api_key
-        args['format'] = format
-        
+
         if self.api_key and self.api_secret_key:
-            
             if signing_alg == None:
                 signing_alg = sign_args            
-            
             args['sig'] = signing_alg(args, self.api_secret_key)
 
         return args
