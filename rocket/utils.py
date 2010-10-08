@@ -132,8 +132,9 @@ def gen_ns_pair_slash_delim(ns):
     return (ns_fun, ns_title)
 
 
-
-##
+#######################################################
+# Logging configuration                               #
+#######################################################
 
 def r_log(log_stream=sys.stdout,log_level=logging.INFO):
 
