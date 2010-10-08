@@ -248,23 +248,23 @@ class Rocket(object):
     All configuration options are keywords, since every API is different.
     """
 
-    def __init__(self, api_key=None, api_secret_key=None, client='rocket',
-                 proxy=None, api_url=None, api_url_secure=None,
+    def __init__(self, function_list, api_key=None, api_secret_key=None,
+                 client='rocket', proxy=None, api_url=None, api_url_secure=None,
                  basic_auth_pair=None, basic_auth_realm=None,
-                 gen_namespace_pair=gen_ns_pair_default, 
-                 log_stream=sys.stdout, log_level=logging.INFO,
-                 format=DEFAULT_RESPONSE_FORMAT):
+                 gen_namespace_pair=gen_ns_pair_default, log_stream=sys.stdout,
+                 log_level=logging.INFO, format=DEFAULT_RESPONSE_FORMAT):
         """Initializes a new Rocket which provides wrappers for the
         API implementation.
 
         The namespace map saves a namespace as it originally appeared in
         FUNCTIONS
         """
+        self.function_list = function_list
         self.api_key = api_key
         self.api_secret_key = api_secret_key
         self.format = format
         self.proxy = proxy
-        self.api_url = api_url;
+        self.api_url = api_url
         self.api_url_secure = api_url_secure
         self.basic_auth_pair = basic_auth_pair
         self.basic_auth_realm = basic_auth_realm
@@ -332,6 +332,8 @@ class Rocket(object):
         if num_parts < 3:
             raise rocket.RocketError('Incorrect function_list definition')
 
+        # Break the function name into three parts:
+        #     object name, namespace, http connection method
         obj_name = fun_parts[0]
         namespace = fun_parts[1]
         method = fun_parts[2]
@@ -350,13 +352,12 @@ class Rocket(object):
             opener = urllib2.build_opener(proxy_handler)
             response = opener.open(query_url).read()
         else:
-
             response = urlread(query_url, data=args, method=method.upper(),
                            basic_auth_pair=self.basic_auth_pair,
                            basic_auth_realm=self.basic_auth_realm,
                            log_level=self._log_level,
                            log_stream=self._log_stream)
-        
+
             if response:
                 return self._parse_response(response, method)
             else:
@@ -366,21 +367,21 @@ class Rocket(object):
 
 
     def check_error(self, response):
-        """Checks if the given Api response is an error, and then raises
-        the appropriate exception.
+        """Some API's transmit errors over successful HTTP connections, eg. 200.
+
+        Implement this function to handle parsing a response for errors.
         """
-        reason = 'Rocket.check_error method not implemented'
-        raise RuntimeError(reason)
+        pass
 
     
-    def gen_query_url(self, url, function, method="get", get_args=None):
+    def gen_query_url(self, url, function, method=None, get_args=None):
         """Generates URL for request according to structure of IDL.
 
         Implementation formats worth considering:
-            url/function.format
+            url/function.format # self.format
             url/function
         """
-        return '%s/%s.%s' % (url, function, self.format)
+        return '%s/%s' % (url, function)
 
     
     def build_query_args(self, method, args=None,
