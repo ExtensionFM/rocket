@@ -335,8 +335,8 @@ class Rocket(object):
         # Break the function name into three parts:
         #     object name, namespace, http connection method
         obj_name = fun_parts[0]
-        namespace = fun_parts[1]
-        method = fun_parts[2]
+        namespace = '.'.join(fun_parts[1:-1])
+        method = fun_parts[-1]
         (ns_fun, ns_title) = self.gen_namespace_pair(namespace)
 
         args = self.build_query_args(method, args=args)
@@ -401,7 +401,7 @@ class Rocket(object):
         if self.api_key:
             args['api_key'] = self.api_key
 
-        if self.api_key and self.api_secret_key:
+        if self.api_secret_key:
             if signing_alg == None:
                 signing_alg = sign_args            
             args['sig'] = signing_alg(args, self.api_secret_key)
