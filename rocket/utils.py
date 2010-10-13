@@ -32,6 +32,8 @@ def _extract_param_values(params):
     def inspect(i):
         if type(i) == dict:
             map(inspect, i.values())
+        elif type(i) == list:
+            map(inspect, i)
         else:
             return values.append(i)
     map(inspect, params.values())
