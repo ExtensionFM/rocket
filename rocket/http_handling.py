@@ -15,9 +15,10 @@ DEFAULT_REQUEST_METHOD = 'GET'
 class RocketAPIException(Exception):
     """Exception class for errors received from the API."""
 
-    def __init__(self, code, msg):
+    def __init__(self, code, msg, *args, **kwargs):
         self.code = code
-        super(RocketAPIException, self).__init__(msg)
+        self.msg = msg
+        super(RocketAPIException, self).__init__(*args, **kwargs)
 
     def __str__(self):
         return '%s - (code: %s)' % (self.msg, self.code)
