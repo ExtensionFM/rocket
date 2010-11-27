@@ -63,77 +63,6 @@ People looking to learn how Rocket works should checkout `rocket_simple
 in the modules directory.
 
 
-Code generation using proxies
-=============================
-
-Rocket has a module called proxies which contain some functions for
-generating callable objects from IDL's. The Proxy class represents
-a namespace. It then generatescode representing 'get' or 'post', as 
-found in FUNCTIONS, and attaches them to the Proxy classes. This
-is how Rocket maps particular funcitons into an API's namespace.
-
-During Rocket's __init__() process, it calls generate_proxies(FUNCTIONS)
-and receives back a map of Proxy classes, each with 'get()' or 'post()'
-functions attached to them, as describes in FUNCTIONS. These proxy
-classes are then attached to our Rocket and we now have generated python
-code that's ready for use.
-
-The Rocket itself is what maps this data into http calls. Becaues of
-this, to implement a remote API is to implement a Rocket. A use 
-then instantiates your implementation and uses the generated functions
-from your implementation's FUNCTIONS list.
-
-See rocket.proxies or Rocket.__init__() for more details.
-
-
-Http handling
-=============
-
-Rocket's http_handling.py module contains a few functions for handling
-rocket's http interactions. The main function here is urlread() which
-takes some arguments for tweaking the call, like which http method
-(GET, POST, DELETE) to use or if basic_auth should be turned on.
-
-Functionality for file handling will be in there soon but is not complete.
-
-
-Auth
-====
-
-Auth currently contains some functions for signing API requests and
-basic_auth. For request signatures, sign_args and sign_sorted_values 
-are available. Often enough a timestamp can be used to limit the 
-lifespan of the signature.
-
-sign_args takes the request arguments, the secret key and a hashing
-algorithm (defaults to md5). This algorithm concatenates strings of
-the arguments, like arg1=val1arg2=val2, and generates the key like:
-
-::
-  
-    # get string of args like 'arg1=val1arg2=val2'
-    s = _join_kv_pairs(args, hash_alg=hash_alg)
-    # note: this algorithm *postfixes* s with the key
-    hash_input = s + api_secret_key
-    return hash_alg(hash_input).hexdigest()
-
-sign_sorted_values is similar, but it's signature string is a sorted
-list of the request's values, like 'avalue1value2zebra1' and prefixes
-this string with the secret key for it's signature.
-
-Each API is different. :)
-
-::
-
-    # extact flattened list of values found in args
-    values = _extract_param_values(args)
-    arranged_args = sorted(values)
-    s = ''.join(arranged_args)
-    # note: this algorithm *prefixes* s with the key
-    hash_input = api_secret_key + s 
-    return hash_alg(hash_input).hexdigest()
-
-
 Callbacks
 =========
 
@@ -218,6 +147,77 @@ and 'SMSMessagesProxy', as attached to the Rocket.
 
 Often enough, you won't need these overrides, but you'll be happy 
 rocket handles a few of them easily when they come up.
+
+
+Code generation using proxies
+=============================
+
+Rocket has a module called proxies which contain some functions for
+generating callable objects from IDL's. The Proxy class represents
+a namespace. It then generatescode representing 'get' or 'post', as 
+found in FUNCTIONS, and attaches them to the Proxy classes. This
+is how Rocket maps particular funcitons into an API's namespace.
+
+During Rocket's __init__() process, it calls generate_proxies(FUNCTIONS)
+and receives back a map of Proxy classes, each with 'get()' or 'post()'
+functions attached to them, as describes in FUNCTIONS. These proxy
+classes are then attached to our Rocket and we now have generated python
+code that's ready for use.
+
+The Rocket itself is what maps this data into http calls. Becaues of
+this, to implement a remote API is to implement a Rocket. A use 
+then instantiates your implementation and uses the generated functions
+from your implementation's FUNCTIONS list.
+
+See rocket.proxies or Rocket.__init__() for more details.
+
+
+Http handling
+=============
+
+Rocket's http_handling.py module contains a few functions for handling
+rocket's http interactions. The main function here is urlread() which
+takes some arguments for tweaking the call, like which http method
+(GET, POST, DELETE) to use or if basic_auth should be turned on.
+
+Functionality for file handling will be in there soon but is not complete.
+
+
+Auth
+====
+
+Auth currently contains some functions for signing API requests and
+basic_auth. For request signatures, sign_args and sign_sorted_values 
+are available. Often enough a timestamp can be used to limit the 
+lifespan of the signature.
+
+sign_args takes the request arguments, the secret key and a hashing
+algorithm (defaults to md5). This algorithm concatenates strings of
+the arguments, like arg1=val1arg2=val2, and generates the key like:
+
+::
+  
+    # get string of args like 'arg1=val1arg2=val2'
+    s = _join_kv_pairs(args, hash_alg=hash_alg)
+    # note: this algorithm *postfixes* s with the key
+    hash_input = s + api_secret_key
+    return hash_alg(hash_input).hexdigest()
+
+sign_sorted_values is similar, but it's signature string is a sorted
+list of the request's values, like 'avalue1value2zebra1' and prefixes
+this string with the secret key for it's signature.
+
+Each API is different. :)
+
+::
+
+    # extact flattened list of values found in args
+    values = _extract_param_values(args)
+    arranged_args = sorted(values)
+    s = ''.join(arranged_args)
+    # note: this algorithm *prefixes* s with the key
+    hash_input = api_secret_key + s 
+    return hash_alg(hash_input).hexdigest()
 
 
 Install It
