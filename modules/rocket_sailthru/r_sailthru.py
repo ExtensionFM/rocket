@@ -198,7 +198,7 @@ class Sailthru(rocket.Rocket):
         the appropriate exception.
         """
         if type(response) is dict and response.has_key('error'):
-            raise rocket.RocketAPIError(response['error'], response['errormsg'])
+            raise rocket.RocketAPIException(response['error'], response['errormsg'])
 
 
     def build_query_args(self, *args, **kwargs):
