@@ -4,7 +4,8 @@ Rocket
 
 Rocket is a library for quickly implementing a client-side API. 
 
-Rocket is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
+Rocket is licensed under the `Apache Licence, Version 2.0 
+<http://www.apache.org/licenses/LICENSE-2.0.html>`_
 
 
 Features
@@ -33,47 +34,56 @@ your API implementation will look close to this.
 That's as minimal as I've been able to get for describing an API. Perhaps
 a different structure could be used, but the idea remains the same. To
 describe the API in a language agnostic way and generate code that implements
-it. 
+it.
 
-Sometimes there are slight differences in how an API works, such as how a
-each request is signed. There are two functions for use here _hash_args
-and _get_sorted_value_hash. Please read your API's documentation to 
-determine which one to use, if you need one, or please extend Rocket.
+An API implementer would then subclass Rocket, like class Sailthru(Rocket)
+and then override __init__ to pass that FUNCTIONS list to rocket for
+code generation.
 
+An API user would not have to worry about this stuff, as it is behind the
+scenes of the Rocket framework.
+    
 
 Modules
 =======
 
 Rocket comes with multiple API implementations, but they are not installed
-by default. Currently packaged: Twilio, Sailthru, Echonest, Twitter, Exfm.
-
-Each module has a setup.py for installing but Rocket doesn't install them
+by default. Each module has a setup.py for installing but Rocket doesn't install them
 by default.
 
-As bare-bones Rocket is available in modules/rocket_simple.
+Currently packaged:
+`Sailthru <https://github.com/ExtensionFM/rocket/tree/master/modules/rocket_sailthru/>`_,
+`Echonest <https://github.com/ExtensionFM/rocket/tree/master/modules/rocket_echonest/>`_,
+`Twilio <https://github.com/ExtensionFM/rocket/tree/master/modules/rocket_twilio/>`_, 
+`Twitter <https://github.com/ExtensionFM/rocket/tree/master/modules/rocket_twitter/>`_, 
+`Exfm <https://github.com/ExtensionFM/rocket/tree/master/modules/rocket_exfm/>`_.
+
+People looking to learn how Rocket works should checkout `rocket_simple
+<https://github.com/ExtensionFM/rocket/tree/master/modules/rocket_simple/>`_ 
+in the modules directory.
 
 
 Code generation using proxies
 =============================
 
 Rocket has a module called proxies which contain some functions for
-generating callable objects that process inputs in a somewhat generic
-manner. Rocket uses this module for processing the FUNCTIONS Map (IDL)
-into real Python objects. These objects get mapped to a subclass of
-Rocket during __init__() to create the runnable implementation.
+generating callable objects from IDL's. The Proxy class represents
+a namespace. It then generatescode representing 'get' or 'post', as 
+found in FUNCTIONS, and attaches them to the Proxy classes. This
+is how Rocket maps particular funcitons into an API's namespace.
 
-The gist of this mechanism is that the Proxy's represent a namespace
-which has implementations of http protocol methods. The namespace 'email'
-with 'post' method details is turned into the class EmailProxy with a
-function 'post' that takes one argument 'email' and has a keyword 
-argument that defaults to None, since it's optional, but takes a json
-structure for encoding.
+During Rocket's __init__() process, it calls generate_proxies(FUNCTIONS)
+and receives back a map of Proxy classes, each with 'get()' or 'post()'
+functions attached to them, as describes in FUNCTIONS. These proxy
+classes are then attached to our Rocket and we now have generated python
+code that's ready for use.
 
-The Rocket itself is what maps this data into http calls. Rocket then
-parses the response and attempts to return real python objects representing
-the data. It throws a RocketAPIException in the event it can't do so.
+The Rocket itself is what maps this data into http calls. Becaues of
+this, to implement a remote API is to implement a Rocket. A use 
+then instantiates your implementation and uses the generated functions
+from your implementation's FUNCTIONS list.
 
-See rocket.proxies for more information. 
+See rocket.proxies or Rocket.__init__() for more details.
 
 
 Http handling
