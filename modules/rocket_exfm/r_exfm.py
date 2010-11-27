@@ -8,13 +8,13 @@ from rocket.proxies import gen_ns_pair_multi_delim
 import logging
 import traceback
 
-"""Samples: http://micro.extension.fm/v1/user/profile.get?owner=j2d2
-http://micro.extension.fm/v1/user/noted.get?owner=j2d2&start=0&count=3"""
+"""Samples: http://api.extension.fm/v1/user/profile.get?owner=j2d2
+http://api.extension.fm/v1/user/noted.get?owner=j2d2&start=0&count=3"""
 
 
 VERSION = '0.1'
-#API_URL = 'http://micro.extension.fm/v1/user'
-API_URL = 'http://micro.extension.fm/v1.1'
+#API_URL = 'http://api.extension.fm/v1/user'
+API_URL = 'http://api.extension.fm/v1.1'
 API_URL_SECURE = None
 
 ## TODO, Find these docs..
