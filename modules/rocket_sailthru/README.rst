@@ -11,25 +11,20 @@ Using
 -----
 
 Using rocket_sailthru is easy. Install rocket and then rocket_sailthru
-from the modules directory.
-
-Then, it's as simple as:
+from the modules directory. Using it looks like this:
 
 ::
 
     from r_sailthru import Sailthru
     
-    if __name__ == '__main__':
-        api_key = ''
-        api_secret_key = ''
+    api_key = ''
+    api_secret_key = ''
     
-        template_name = 'welcome template'
-        email_address = 'ih@ve.one'
+    template_name = 'welcome template'
+    email_address = 'ih@ve.one'
     
-        sailthru = Sailthru(api_key=api_key, api_secret_key=api_secret_key)
-    
-        send_id = sailthru.send.post(template_name, email_address)
-        print send_id
+    sailthru = Sailthru(api_key=api_key, api_secret_key=api_secret_key)
+    send_id = sailthru.send.post(template_name, email_address)
     
 
 Install
