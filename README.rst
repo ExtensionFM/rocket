@@ -73,7 +73,7 @@ The Rocket itself is what maps this data into http calls. Rocket then
 parses the response and attempts to return real python objects representing
 the data. It throws a RocketAPIException in the event it can't do so.
 
-See rocket.proxies.py for more information. 
+See rocket.proxies for more information. 
 
 
 Http handling
