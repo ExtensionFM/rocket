@@ -12,5 +12,5 @@ import sys
 import logging
 
 from http_handling import RocketAPIException
-from rocket import Rocket
+from rocket import Rocket, json
 from rocket import RocketException
