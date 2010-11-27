@@ -1,16 +1,32 @@
 rocket_twitter
 ==============
 
-rocket_twitter is a Python library for interfacing with EchoNest's API
+rocket_twitter is a Python library for interfacing with the `Twitter API
+<http://apiwiki.twitter.com/w/page/22554679/Twitter-API-Documentation>`_
 
 rocket_twitter is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
 
 
-Features
---------
+Using
+-----
 
-rocket_twitter is an implementation of the `EchoNest API 
-<http://http://developer.echonest.com/docs/v4/>`_
+rocket_twitter is not a complete twitter implementation at this time. 
+
+Searching twitter is implemented and I use it frequently. That looks
+like:
+
+::
+
+    from r_twitter import Twitter
+
+    twitter = Twitter()
+
+    search_query = '@j2labs'
+    response_dict = twitter.search.get(search_query)
+
+    print 'TWEETS:'
+    for tweet in response_dict['results']:
+        print '  %s: %s' % (tweet['from_user'], tweet['text'])
 
 
 Install
