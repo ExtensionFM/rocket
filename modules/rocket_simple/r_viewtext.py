@@ -19,9 +19,6 @@ FUNCTIONS = {
 
 API_BASE_URL = "http://viewtext.org/api"
 
-# Tell rocket what methods this api has
-rocket.generate_proxies(FUNCTIONS, foreign_globals=globals() )
-
 
 class ViewTest( rocket.Rocket ):
     
@@ -47,7 +44,7 @@ class ViewTest( rocket.Rocket ):
         """
         pass
             
-    ## API query format, how does this API need queries?
+    ## API URL format. We design the URL for each query here.
     def gen_query_url(self, url, function, **kwargs ):
         """The query url should look like:
 
@@ -68,7 +65,7 @@ class ViewTest( rocket.Rocket ):
     
 
 if __name__ == "__main__":
-    # simple test, scape the test of the extension.fm site, returns json, print to screen
+    # simple test, scrape the test of the extension.fm site, returns json, print to screen
     simple_rocket = ViewTest()
     # actually call the api now
     rocket_response = simple_rocket.text.get("extension.fm")
