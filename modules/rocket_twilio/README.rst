@@ -14,7 +14,8 @@ rocket_twilio is not a complete implementation at this time. I don't
 think it would be a challenge to complete the API but I haven't had
 time yet. Patches welcome!
 
-Anyway, using SMS/Message, which is implemented looks like this:
+Anyway, using SMS/Message over HTTP post, which sends an SMS message,
+looks like this:
 
 ::
 
