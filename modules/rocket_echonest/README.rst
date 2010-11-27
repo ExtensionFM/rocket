@@ -12,9 +12,7 @@ Using
 -----
 
 Using rocket_echonest is easy. Install rocket and then rocket_echonest
-from the modules directory.
-
-Using looks like this:
+from the modules directory. Using it looks like this:
 
 ::
 
