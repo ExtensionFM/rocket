@@ -3,6 +3,7 @@
 import logging
 import sys
 import rocket
+import re
 
 #########################################
 # Namespace management functions ########
@@ -18,15 +19,17 @@ def gen_ns_pair_default(ns):
     return (ns.lower(), ns.title())
 
 
-def gen_ns_pair_slash_delim(ns):
-    """Similar to gen_ns_pair_default but allows a '/' in the namespace
-    field. If any of the split segments consist entirely of upper case
-    letters, they stay upper case. They are title()'d otherwise to
-    create a usual looking object name.
+def gen_ns_pair_multi_delim(ns, delims=['\/', '\.']):
+    """Similar to gen_ns_pair_default but allows a '/' or '.' in the
+    namespace field. If any of the split segments consist entirely of
+    upper case letters, they stay upper case. They are title()'d otherwise
+    to create a usual looking object name.
 
     SMS/Messages => ('SMSMessages', 'SMSMessages')
       or
     user/noted   => ('usernoted', 'UserNoted')
+      or
+    user/profile.get => ('userprofileget', 'UserProfileGet')
 
     returns ('dynamic function name', 'dynamic class name')
     """
@@ -34,10 +37,10 @@ def gen_ns_pair_slash_delim(ns):
         if not nnss.isupper():
             return nnss.title()
         return nnss
-    
-    n_parts = ns.split('/')
-    ns_fun = ''.join(n_parts)
-    ns_title = ''.join([title_if_lower(n) for n in n_parts])
+
+    groups = re.split('|'.join(delims), ns)
+    ns_fun = ''.join(groups)
+    ns_title = ''.join([title_if_lower(g) for g in groups])
     return (ns_fun, ns_title)
 
 
