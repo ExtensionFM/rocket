@@ -124,7 +124,8 @@ class Rocket(object):
 
         rocket_proxies = proxies.generate_proxies(function_list,
                                                   gen_doc_str,
-                                                  logger=logger)
+                                                  logger=logger,
+                                                  gen_namespace_pair=self.gen_namespace_pair)
 
         self.namespace_map = {}
         for namespace in self.function_list:
@@ -169,27 +170,27 @@ class Rocket(object):
         return result
 
 
-    def __call__(self, function=None, args=None, secure=False):
+    def __call__(self, function_key=None, args=None, secure=False):
         """Mediator for calls to dynamic methods. Constructs environment
         based on arguments and calls appropriate Proxy object for
         function behavior.
         """
         # for Django templates, if this object is called without any arguments
         # return the object itself
-        if function is None:
+        if function_key is None:
             return self
 
         # Entries in function_list are app_name.[namespace]function.method
-        fun_parts = function.split('.')
-        num_parts = len(fun_parts)
+        key_parts = function_key.split('.')
+        num_parts = len(key_parts)
         if num_parts < 3:
             raise rocket.RocketException('Incorrect function_list definition')
 
         # Break the function name into three parts:
         #     object name, namespace, http connection method
-        obj_name = fun_parts[0]
-        namespace = '.'.join(fun_parts[1:-1])
-        method = fun_parts[-1]
+        obj_name = key_parts[0]
+        namespace = '.'.join(key_parts[1:-1])
+        method = key_parts[-1]
         (ns_fun, ns_title) = self.gen_namespace_pair(namespace)
 
         args = self.build_query_args(method, args=args)
@@ -233,7 +234,7 @@ class Rocket(object):
         pass
 
     
-    def gen_query_url(self, url, function, method=None, get_args=None):
+    def gen_query_url(self, url, function, format=None, method=None, get_args=None):
         """Generates URL for request according to structure of IDL.
 
         Implementation formats worth considering:
