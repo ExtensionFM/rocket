@@ -20,18 +20,15 @@ import mimetypes
 import logging
 
 
-from utils import sign_args
-from utils import gen_ns_pair_default
-from utils import r_log
+import proxies
+from auth import sign_args
+import http_handling
 
 try:
     from hashlib import md5
 except ImportError:
     from md5 import md5
-    
-RESPONSE_JSON = 'json'
-DEFAULT_RESPONSE_FORMAT = RESPONSE_JSON
-DEFAULT_REQUEST_METHOD = 'GET'
+
 
 
 ### Would like a hand making this appengine safe
@@ -50,177 +47,11 @@ except ImportError:
 class json(object): pass
 
 
-########################################
-# URL handling #########################
-########################################
+#########################################
+# Rocket Errors #########################
+#########################################
 
-def encode_auth_pair(basic_auth_pair):
-    """Base64 encodes a username and password delimited by ':'.
-    It then returns 'Basic EnCoDedStriNG.
-    """
-    if basic_auth_pair:
-        import base64
-        unencoded = '%s:%s' % basic_auth_pair
-        ba_str = base64.encodestring(unencoded)[:-1]
-        return 'Basic %s ' % ba_str
-
-
-def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
-            basic_auth_pair=None, basic_auth_realm=None, log_stream=sys.stderr,
-            log_level=logging.DEBUG):
-    """Takes a url[, data, headers, request method].
-
-    It establishes an httplib.HTTPConnection and allows
-    specific HTTP connection types, like POST, PUT, DELETE
-    for API interaction.
-
-    # commenting out a comment (so meta)
-    # POST sends 'application/x-www-form-urlencoded' for it's
-    # Content-type
-
-    Returns a tuple of (status code, reason, any data read)
-    """
-    logger = r_log( log_stream=log_stream, log_level=log_level )
-    if data is not None:
-        data = urllib.urlencode(data)
-
-    # encoded_args = unicode_urlencode(encoded_args)
-    
-    if method == 'GET':
-        if data is not None:
-            url = '%s?%s' % (url, data)
-            logger.debug("Make %s connection to %s" % ( method, data ) )
-        data = None
-
-    if basic_auth_pair:
-        auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password(realm=basic_auth_realm,
-                                  uri=url,
-                                  user=basic_auth_pair[0],
-                                  passwd=basic_auth_pair[1])
-        opener = urllib2.build_opener(auth_handler)
-        # ...and install it globally so it can be used with urlopen.
-        urllib2.install_opener(opener)
-
-    request = urllib2.Request(url, data)
-    try:
-        open_req = urllib2.urlopen(request)
-        # commenting out the code the commented comment comments on
-        #if method == 'POST':
-        #    req.add_header('Content-type', "application/x-www-form-urlencoded")
-        #    req.add_header('Accept', "text/plain")
-        open_req.http_method = method
-    except urllib2.HTTPError, http_e:
-        raise RocketAPIError( http_e.code,  http_e )
-    except urllib2.URLError,e:
-        logger.warn("Connection error %s" % e)
-        raise RocketError( e )
-    except Exception,e:
-        logger.critical("uknown error %s" % e )
-        raise RocketError( e )        
-        
-    return (open_req.code, open_req.msg, open_req.read())  
-    #return (r.status, r.reason, r.read())
-
-
-
-def unicode_urlencode(self, params):
-    """A unicode aware version of urllib.urlencode."""
-    if isinstance(params, dict):
-        params = params.items()
-    args = [(k, isinstance(v, unicode) and v.encode('utf-8') or v)
-            for k, v in params]
-    return urllib.urlencode(args)
-
-
-
-########################################
-# Proxy functions ######################
-########################################
-
-class Proxy(object):
-    """Represents a namespace of API calls."""
-
-    def __init__(self, client, name, gen_namespace_pair=gen_ns_pair_default):
-        self._client = client
-        self._name = name
-        self.gen_namespace_pair = gen_namespace_pair
-
-    def __call__(self, method=None, args=None, add_session_args=True):
-        # for Django templates, if this object is called without any arguments
-        # return the object itself
-        if method is None:
-            return self
-
-        return self._client('%s.%s' % (self._name, method), args)
-
-    
-def generate_proxies(function_list, doc_fun=None, foreign_globals={},
-                     gen_namespace_pair=gen_ns_pair_default,
-                     log_stream=sys.stdout, log_level=logging.INFO):
-    """Helper function for compiling function_list into runnable code.
-    Run immediately after definition.
-    """
-    logger = r_log( log_stream=log_stream, log_level=log_level )
-    logger.debug("Creating rockets %s \n" % function_list )
-    for namespace in function_list:
-        methods = {}
-
-        for method in function_list[namespace]:
-            params = ['self']
-            body = ['args = {}']
-
-            method_params = function_list[namespace][method]
-            for param_name, param_type, param_options in method_params:
-                param = param_name
-
-                for option in param_options:
-                    if isinstance(option, tuple) and option[0] == 'default':
-                        if param_type == list:
-                            param = '%s=None' % param_name
-                            body.append('if %s is None: %s = %s'
-                                        % (param_name,
-                                           param_name,
-                                           repr(option[1])))
-                        else:
-                            param = '%s=%s' % (param_name, repr(option[1]))
-
-                # We only jsonify the argument if it's a list or a dict. 
-                if param_type == json:
-                    body.append('if isinstance(%s, list) or isinstance(%s, dict): %s = json_encode(%s)'
-                                % ((param_name,) * 4))
-
-                # Optional variables default to None
-                # Optional case must then be handled.
-                if 'optional' in param_options:
-                    param = '%s=None' % param_name
-                    body.append('if %s is not None: args[\'%s\'] = %s'
-                                % (param_name,
-                                   param_name,
-                                   param_name))
-                else:
-                    body.append('args[\'%s\'] = %s' % (param_name,
-                                                       param_name))
-
-                params.append(param)
-
-            # simple docstring to refer them to web docs for their API
-            if doc_fun:
-                body.insert(0, doc_fun(namespace, method))
-            body.insert(0, 'def %s(%s):' % (method, ', '.join(params)))
-            body.append('return self(\'%s\', args)' % method)
-            exec('\n    '.join(body))
-            methods[method] = eval(method)
-
-        # Sometimes namespaces need calm down a little bit
-        (ns_name, ns_title) = gen_namespace_pair(namespace)
-
-        proxy = type('%sProxy' % ns_title, (Proxy, ), methods)
-        globals()[proxy.__name__] = proxy
-        foreign_globals[proxy.__name__] = proxy
-
-
-class RocketError(Exception):
+class RocketException(Exception):
     """Exception class for errors received from Rocket."""
 
     def __init__(self, msg):
@@ -230,16 +61,28 @@ class RocketError(Exception):
         return '%s' % (self.msg)
     
 
-class RocketAPIError(RocketError):
-    """Exception class for errors received from the API."""
+#########################################
+# Logging context #######################
+#########################################
 
-    def __init__(self, code, msg):
-        self.code = code
-        super(RocketAPIError, self).__init__(msg)
+def logging_context(log_stream=sys.stdout, log_level=logging.INFO):
+    logger = logging.getLogger("logger_rocket")
+    logger.setLevel(log_level)
+    
+    # set stream from user, user sys.stdout as rocket default
+    sh = logging.StreamHandler( log_stream )
+    # set the log level requested by user, default is logging.info
+    sh.setLevel( log_level )
+    formatter = logging.Formatter("%(asctime)s %(process)d %(filename)s %(lineno)d %(levelname)s #rocket| %(message)s") 
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    
+    return logger    
 
-    def __str__(self):
-        return '%s - (code: %s)' % (self.msg, self.code)
 
+#########################################
+# The Rocket ############################
+#########################################
 
 class Rocket(object):
     """Provides access to most features necessary for an API
@@ -248,11 +91,15 @@ class Rocket(object):
     All configuration options are keywords, since every API is different.
     """
 
-    def __init__(self, function_list, api_key=None, api_secret_key=None,
-                 client='rocket', proxy=None, api_url=None, api_url_secure=None,
+    def __init__(self, function_list,
+                 client='rocket', gen_doc_str=None,
+                 api_key=None, api_secret_key=None,
+                 api_url=None, api_url_secure=None,
                  basic_auth_pair=None, basic_auth_realm=None,
-                 gen_namespace_pair=gen_ns_pair_default, log_stream=sys.stdout,
-                 log_level=logging.INFO, format=DEFAULT_RESPONSE_FORMAT):
+                 web_proxy=None, format=http_handling.DEFAULT_RESPONSE_FORMAT,
+                 gen_namespace_pair=proxies.gen_ns_pair_default, 
+                 log_stream=sys.stdout, log_level=logging.INFO,
+                 *args, **kwargs):
         """Initializes a new Rocket which provides wrappers for the
         API implementation.
 
@@ -263,32 +110,37 @@ class Rocket(object):
         self.api_key = api_key
         self.api_secret_key = api_secret_key
         self.format = format
-        self.proxy = proxy
+        self.web_proxy = web_proxy
         self.api_url = api_url
         self.api_url_secure = api_url_secure
         self.basic_auth_pair = basic_auth_pair
         self.basic_auth_realm = basic_auth_realm
         self.gen_namespace_pair = gen_namespace_pair
-        self.namespace_map = {}
         self._log_level=log_level
         self._log_stream=log_stream
         
-        logger = r_log( log_stream=log_stream, log_level=log_level )
-        logger.debug("Create rocket: url: %s client %s" % (api_url,client) )
+        logger = logging_context(log_stream=log_stream, log_level=log_level)
+        logger.debug("Create rocket: url: %s client %s" % (api_url,client))
 
+        rocket_proxies = proxies.generate_proxies(function_list,
+                                                  gen_doc_str,
+                                                  logger=logger)
+
+        self.namespace_map = {}
         for namespace in self.function_list:
             (ns_name, ns_title) = self.gen_namespace_pair(namespace)
-            self.__dict__[ns_name] = eval('%sProxy(self, \'%s\')'
-                                          % (ns_title,
-                                             '%s.%s' % (client, ns_name)))
+            proxy_class = rocket_proxies['%sProxy' % ns_title]
+            self.__dict__[ns_name] = proxy_class(self,
+                                                 '%s.%s' % (client, ns_name))
             self.namespace_map[ns_name] = namespace
             
             
     def _expand_arguments(self, args):
-        """Expands arguments from native type to web friendly type"""
-
-        logger = r_log( log_stream=self._log_stream, log_level=self._log_level )
+        """Expands arguments from native type to web friendly type
+        """
+        logger = logging_context(log_stream=self._log_stream, log_level=self._log_level)
         logger.debug("rocket _expand_arguments %s" % args )
+        
         for arg in args.items():
             if type(arg[1]) == list:
                 args[arg[0]] = ','.join(str(a) for a in arg[1])
@@ -303,10 +155,11 @@ class Rocket(object):
         """Parses the response according to the given (optional) format,
         which should be 'json'.
         """
-        logger = r_log( log_stream=self._log_stream, log_level=self._log_level )
+        logger = logging_context(log_stream=self._log_stream, log_level=self._log_level)
         logger.debug("rocket _parse_response, response=%s and method=%s"
                      % (response, method) )
-        if self.format == RESPONSE_JSON:
+        
+        if self.format == http_handling.RESPONSE_JSON:
             json = response[2]
             result = json_decode(json)
             self.check_error(result)
@@ -330,7 +183,7 @@ class Rocket(object):
         fun_parts = function.split('.')
         num_parts = len(fun_parts)
         if num_parts < 3:
-            raise rocket.RocketError('Incorrect function_list definition')
+            raise rocket.RocketException('Incorrect function_list definition')
 
         # Break the function name into three parts:
         #     object name, namespace, http connection method
@@ -344,19 +197,21 @@ class Rocket(object):
         api_url = self.api_url
         if secure:
             api_url = self.api_url_secure
-        query_url = self.gen_query_url(api_url, ns_fun, method=method,
+        query_url = self.gen_query_url(api_url, ns_fun, 
+                                       format=self.format,
+                                       method=method,
                                        get_args=args)
 
-        if self.proxy:
-            proxy_handler = urllib2.ProxyHandler(self.proxy)
-            opener = urllib2.build_opener(proxy_handler)
+        if self.web_proxy:
+            web_proxy_handler = urllib2.ProxyHandler(self.web_proxy)
+            opener = urllib2.build_opener(web_proxy_handler)
             response = opener.open(query_url).read()
         else:
-            response = urlread(query_url, data=args, method=method.upper(),
-                           basic_auth_pair=self.basic_auth_pair,
-                           basic_auth_realm=self.basic_auth_realm,
-                           log_level=self._log_level,
-                           log_stream=self._log_stream)
+            response = http_handling.urlread(query_url, data=args,
+                                             method=method.upper(),
+                                             basic_auth_pair=self.basic_auth_pair,
+                                             basic_auth_realm=self.basic_auth_realm,
+                                             logger=logging_context())
 
             if response:
                 return self._parse_response(response, method)
@@ -365,6 +220,10 @@ class Rocket(object):
         
         return response
 
+    
+    ########################################
+    # Callbacks ############################
+    ########################################
 
     def check_error(self, response):
         """Some API's transmit errors over successful HTTP connections, eg. 200.

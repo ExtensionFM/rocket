@@ -3,20 +3,14 @@
 __doc__ = """rocket - implementing api's with a quickness
 
 For more information, see: http://github.com/extensionfm/rocket
-
-Rocket has one external dependency: simplejson
-
-To install simplejson:
-
-    pip install simpljson
-
-Or http://undefined.org/python/#simplejson
 """
 
-__all__ = [ 'rocket', 'utils' ]
+__all__ = [ 'rocket', 'proxies', 'http_handlers', 'auth' ]
 
-from rocket import Rocket, json, generate_proxies
-from rocket import RocketError, RocketAPIError
 
-import utils
+import sys
+import logging
 
+from http_handling import RocketAPIException
+from rocket import Rocket
+from rocket import RocketException
