@@ -14,9 +14,9 @@ Developer: http://docs.twilio.com/api
 
 import rocket
 from rocket.auth import sign_sorted_values
-from rocket.proxies import gen_ns_pair_slash_delim
+from rocket.proxies import gen_ns_pair_multi_delim
 
-gen_namespace_pair = gen_ns_pair_slash_delim
+gen_namespace_pair = gen_ns_pair_multi_delim
 
 ########################################
 # Settings #############################
@@ -82,7 +82,7 @@ class Twilio(rocket.Rocket):
         sign_sorted_values
         """
         return super(Twilio, self).build_query_args(signing_alg=sign_sorted_values,
-                                                      *args, **kwargs)
+                                                    *args, **kwargs)
     
         
     def gen_query_url(self, url, function, format=None, method=None, get_args=None):
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     basic_auth_pair = (api_key, api_secret_key) # Twilio actually works this way
 
     twilio = Twilio(api_key, api_secret_key,
-                    gen_namespace_pair=gen_ns_pair_slash_delim,
+                    gen_namespace_pair=gen_ns_pair_multi_delim,
                     basic_auth_pair=basic_auth_pair,
                     basic_auth_realm=basic_auth_realm)    
 
