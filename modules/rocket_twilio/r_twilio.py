@@ -101,7 +101,7 @@ if __name__ == '__main__':
     api_key = ''
     api_secret_key = ''
     basic_auth_realm='Twilio API'
-    basic_auth_pair = (api_key, api_secret_key)
+    basic_auth_pair = (api_key, api_secret_key) # Twilio actually works this way
 
     twilio = Twilio(api_key, api_secret_key,
                     gen_namespace_pair=gen_ns_pair_slash_delim,
