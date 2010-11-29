@@ -9,8 +9,7 @@ if __name__ == '__main__':
 
     twitter = Twitter()
 
-    print 'Calling search!'
     response_dict = twitter.search.get(search_query)
-    print '\n\nTWEETS:'
+    print 'TWEETS:'
     for r in response_dict['results']:
-        print '%s: %s' % (r['from_user'], r['text'])
+        print '  %s: %s' % (r['from_user'], r['text'])
