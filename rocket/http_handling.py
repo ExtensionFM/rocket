@@ -74,7 +74,7 @@ def urlread(url, data=None, headers={}, method=DEFAULT_REQUEST_METHOD,
         #    req.add_header('Accept', "text/plain")
         open_req.http_method = method
     except urllib2.HTTPError, http_e:
-        print 'HTTP E: %s' % http_e
+        logger.error("HTTP error: %s" % http_e)
         raise RocketAPIException( http_e.code,  http_e )
     except urllib2.URLError,e:
         logger.warn("Connection error %s" % e)
