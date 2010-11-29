@@ -2,7 +2,7 @@
 
 import rocket
 from rocket.auth import sign_sorted_values
-from rocket.proxies import gen_ns_pair_slash_delim
+from rocket.proxies import gen_ns_pair_multi_delim
 
 FUNCTIONS = {
     'artist/audio' : {
@@ -242,7 +242,7 @@ class EchoNest( rocket.Rocket ):
     def __init__(self, *args, **kwargs):
         super(EchoNest, self).__init__(FUNCTIONS,
                                        api_url=API_BASE_URL,
-                                       gen_namespace_pair=gen_ns_pair_slash_delim,
+                                       gen_namespace_pair=gen_ns_pair_multi_delim,
                                        *args, **kwargs )
     
     def check_error(self, response):
