@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 
 __doc__ = """Python bindings for the ExtensionFM public API"""
@@ -26,16 +26,90 @@ def _get_api_docstring(namespace, function):
 # IDL for the API
 
 FUNCTIONS = {
-    "user/profile.get" : {
-        'get': [
-            ('owner', str, []),
+    'user/account.login': {
+        'post': [
+            ('username', str, []),
+            ('password', str, []),
         ],
     },
-    "user/noted.get" : {
-        'get' : [
+    'user/account.get': {
+        'post': [
+            ('username', str, []),
+            ('password', str, []),
+        ],
+    },
+    'user/account.create': {
+        'post': [
+            ('username', str, []),
+            ('password', str, []),
+            ('email', str, []),
+        ],
+    },
+    'user/account.set': {
+        'post': [
+            ('username', str, []),
+            ('password', str, []),
+            ('data', rocket.json, []),
+        ],
+    },
+    'user/profile.get': {
+        'get': [
             ('owner', str, []),
-            ('start', int, ['optional']),
-            ('count', int, ['optional']),            
+            ('viewer', str, ['optional']),
+        ],
+    },
+    'user/profile.set': {
+        'get': [
+            ('data', str, []),
+            ('owner', str, ['optional']),
+            ('viewer', str, ['optional']),
+            ('username', str, ['optional']),
+            ('password', str, ['optional']),
+        ],
+    },
+    'user/library.get': {
+        'post': [
+            ('username', str, []),
+            ('password', str, []),
+            ('since_date', int, ['optional']),
+        ],
+    },
+    'user/following.get': {
+        'get': [
+            ('owner', str, ['optional']),
+            ('viewer', str, ['optional']),
+            ('since_date', int, ['optional']),
+            ('page', int, ['optional']),
+            ('size', int, ['optional']),
+        ],
+        'post': [
+            ('owner', str, ['optional']),
+            ('viewer', str, ['optional']),
+            ('username', str, ['optional']),
+            ('password', str, ['optional']),
+            ('since_date', int, ['optional']),
+            ('page', int, ['optional']),
+            ('size', int, ['optional']),
+        ],
+    },
+    'user/following.all': {
+        'post': [
+            ('username', str, []),
+            ('password', str, []),
+            ('since_date', int, ['optional']),
+            ('page', int, ['optional']),
+            ('size', int, ['optional']),
+        ],
+    },
+    'user/followers.get': {
+        'post': [
+            ('owner', str, ['optional']),
+            ('viewer', str, ['optional']),
+            ('username', str, ['optional']),
+            ('password', str, ['optional']),
+            ('since_date', int, ['optional']),
+            ('page', int, ['optional']),
+            ('size', int, ['optional']),
         ],
     },
 }

@@ -96,23 +96,3 @@ class Twilio(rocket.Rocket):
             query_url = '%s.%s' % (query_url, format)
         return query_url
 
-
-if __name__ == '__main__':
-    api_key = ''
-    api_secret_key = ''
-    basic_auth_realm='Twilio API'
-    basic_auth_pair = (api_key, api_secret_key) # Twilio actually works this way
-
-    twilio = Twilio(api_key, api_secret_key,
-                    gen_namespace_pair=gen_ns_pair_multi_delim,
-                    basic_auth_pair=basic_auth_pair,
-                    basic_auth_realm=basic_auth_realm)    
-
-    to_number = '123-123-1234'
-    from_number = '123-123-1234'
-    body = 'a little texty text'
-
-    response = twilio.SMSMessages.post(To=to_number,
-                                       From=from_number,
-                                       Body=body)
-    print response

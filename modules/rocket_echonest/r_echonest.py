@@ -251,14 +251,3 @@ class EchoNest( rocket.Rocket ):
     def gen_query_url(self, url, function, **kwargs ):
         return '%s/%s' % (url, self.namespace_map[function])
     
-
-if __name__ == "__main__":
-    echo_rocket = EchoNest(api_key='N6E4NIOVYMTHNDM8J')
-
-    import pprint
-
-    rocket_response = echo_rocket.artistprofile.get(name="Radiohead")
-    pprint.pprint(rocket_response)
-
-    rocket_response = echo_rocket.songsearch.get(title="Karma Police")
-    pprint.pprint(rocket_response)
