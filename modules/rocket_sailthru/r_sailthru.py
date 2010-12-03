@@ -216,13 +216,3 @@ class Sailthru(rocket.Rocket):
         """
         return '%s/%s' % (url, function)
 
-
-if __name__ == '__main__':
-    api_key = ''
-    api_secret_key = ''
-    email = 'ih@ve.one'
-
-    sailthru = Sailthru(api_key, api_secret_key)
-
-    email = sailthru.email.get(email)
-    print email
