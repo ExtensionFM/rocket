@@ -140,7 +140,6 @@ FUNCTIONS = {
             ('url', str, []),
             ('date', str, ['optional']),
             ('tags', list, ['optional']),
-            ('date', rocket.json, ['optional']),
         ],
     },
     'alert': {
