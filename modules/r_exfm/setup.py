@@ -2,10 +2,10 @@
  
 from distutils.core import setup
  
-setup(name='rocket_exfm',
+setup(name='r_exfm',
       version='0.1',
-      description='Python Client Library for the EXFM API',
+      description='Python Client Library for the exfm API',
       author='James Dennis',
       author_email='james@extension.fm',
-      url='http://github.com/ExtensionFM/rocket_exfm',
+      url='http://github.com/ExtensionFM/rocket/modules/r_exfm',
       py_modules=['r_exfm'])

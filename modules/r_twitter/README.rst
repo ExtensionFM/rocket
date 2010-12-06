@@ -1,16 +1,16 @@
-rocket_twitter
+r_twitter
 ==============
 
-rocket_twitter is a Python library for interfacing with the `Twitter API
+r_twitter is a Python library for interfacing with the `Twitter API
 <http://apiwiki.twitter.com/w/page/22554679/Twitter-API-Documentation>`_
 
-rocket_twitter is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
+r_twitter is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
 
 
 Using
 -----
 
-rocket_twitter is not a complete twitter implementation at this time. 
+r_twitter is not a complete twitter implementation at this time. 
 
 Searching twitter is implemented and I use it frequently. That looks
 like:
@@ -36,7 +36,7 @@ Install
 
     python ./setup.py install
 
-rocket_twitter depends on Rocket being installed.
+r_twitter depends on Rocket being installed.
 http://github.com/ExtensionFM/rocket
 
 pip / easy_install support on the way

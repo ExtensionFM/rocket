@@ -79,8 +79,8 @@ FUNCTIONS = {
             ('owner', str, ['optional']),
             ('viewer', str, ['optional']),
             ('since_date', int, ['optional']),
-            ('page', int, ['optional']),
-            ('size', int, ['optional']),
+            ('count', int, ['optional']),
+            ('start', int, ['optional']),
         ],
         'post': [
             ('owner', str, ['optional']),
@@ -88,8 +88,8 @@ FUNCTIONS = {
             ('username', str, ['optional']),
             ('password', str, ['optional']),
             ('since_date', int, ['optional']),
-            ('page', int, ['optional']),
-            ('size', int, ['optional']),
+            ('count', int, ['optional']),
+            ('start', int, ['optional']),
         ],
     },
     'user/following.all': {
@@ -97,8 +97,8 @@ FUNCTIONS = {
             ('username', str, []),
             ('password', str, []),
             ('since_date', int, ['optional']),
-            ('page', int, ['optional']),
-            ('size', int, ['optional']),
+            ('count', int, ['optional']),
+            ('start', int, ['optional']),
         ],
     },
     'user/followers.get': {
@@ -108,8 +108,16 @@ FUNCTIONS = {
             ('username', str, ['optional']),
             ('password', str, ['optional']),
             ('since_date', int, ['optional']),
-            ('page', int, ['optional']),
-            ('size', int, ['optional']),
+            ('count', int, ['optional']),
+            ('start', int, ['optional']),
+        ],
+    },
+    'user/noted.get': {
+        'get': [
+            ('owner', str, ['optional']),
+            ('viewer', str, ['optional']),
+            ('count', int, ['optional']),
+            ('start', int, ['optional']),
         ],
     },
 }

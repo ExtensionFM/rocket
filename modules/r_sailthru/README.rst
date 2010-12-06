@@ -1,16 +1,16 @@
-rocket_sailthru
+r_sailthru
 ===============
 
-rocket_sailthru is a Python library for interfacing with 
+r_sailthru is a Python library for interfacing with 
 `Sailthru's API <http://docs.sailthru.com/api>`_
 
-rocket_sailthru is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
+r_sailthru is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
 
 
 Using
 -----
 
-Using rocket_sailthru is easy. Install rocket and then rocket_sailthru
+Using r_sailthru is easy. Install rocket and then r_sailthru
 from the modules directory. Using it looks like this:
 
 ::
@@ -34,7 +34,7 @@ Install
 
     python ./setup.py install
 
-rocket_sailthru depends on Rocket being installed.
+r_sailthru depends on Rocket being installed.
 http://github.com/ExtensionFM/rocket
 
 pip / easy_install support on the way

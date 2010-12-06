@@ -2,10 +2,10 @@
  
 from distutils.core import setup
  
-setup(name='rocket_twilio',
+setup(name='r_twilio',
       version='0.1',
       description='Python Client Library for the Twilio API',
       author='James Dennis',
       author_email='james@extension.fm',
-      url='http://github.com/ExtensionFM/rocket_twilio',
+      url='http://github.com/ExtensionFM/rocket/modules/r_twilio',
       py_modules=['r_twilio'])

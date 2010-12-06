@@ -1,16 +1,16 @@
-rocket_twilio
+r_twilio
 =============
 
-rocket_twilio is a Python library for interfacing with the `Twilio API
+r_twilio is a Python library for interfacing with the `Twilio API
 <http://docs.twilio.com/api>`_
 
-rocket_twilio is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
+r_twilio is licensed under the `Apache Licence, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
 
 
 Using
 -----
 
-rocket_twilio is not a complete implementation at this time. I don't
+r_twilio is not a complete implementation at this time. I don't
 think it would be a challenge to complete the API but I haven't had
 time yet. Patches welcome!
 
@@ -46,7 +46,7 @@ Install
 
     python ./setup.py install
 
-rocket_twilio depends on Rocket being installed.
+r_twilio depends on Rocket being installed.
 http://github.com/ExtensionFM/rocket
 
 pip / easy_install support on the way
